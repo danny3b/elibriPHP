@@ -251,7 +251,7 @@ class ElibriAPI {
     $data = $this->request($this->_Q_POP, $this->_POST, $queue, $query);
     $headers = $data[0];
     $source = $data[1];
-    if ($headers["X-eLibri-API-pop-products-count"] == 0) {
+    if ($headers["x-elibri-api-pop-products-count"] == 0) {
       return NULL;
     } else {
       $xml =  "$source\n\n\n";
