@@ -1243,7 +1243,7 @@ class ElibriTextContent extends ElibriAnnotatedObject {
     parent::__construct($xml_fragment);
 
     $this->type = FirstNodeValue::get($xml_fragment, "TextType");
-    $this->type_name = ElibriDictOtherTextType::byCode($this->type)->const_name;
+    $this->type_name = ElibriDictOtherTextType::byCode($this->type) ? ElibriDictOtherTextType::byCode($this->type)->const_name : null;
     $this->text = trim(FirstNodeValue::get($xml_fragment, "Text")); 
     $this->author = FirstNodeValue::get($xml_fragment, "TextAuthor");
   }
@@ -1284,7 +1284,7 @@ class ElibriSupportingResource extends ElibriAnnotatedObject {
     parent::__construct($xml_fragment);
 
     $this->content_type = $xml_fragment->getElementsByTagName("ResourceContentType")->item(0)->nodeValue;
-    $this->content_type_name = ElibriDictResourceContentType::byCode($this->content_type)->const_name;
+    $this->content_type_name = ElibriDictResourceContentType::byCode($this->content_type) ? ElibriDictResourceContentType::byCode($this->content_type)->const_name : null;
     $this->audience = $xml_fragment->getElementsByTagName("ContentAudience")->item(0)->nodeValue;
     $this->audience_name = ElibriDictContentAudience::byCode($this->audience)->const_name;
     $this->mode = $xml_fragment->getElementsByTagName("ResourceMode")->item(0)->nodeValue;
