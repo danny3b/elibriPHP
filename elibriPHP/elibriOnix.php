@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Poprawka dla PHP 8.2+ 
+ * Klasy parsujące XML często tworzą właściwości dynamicznie.
+ */
+
 //! @defgroup private Klasy pomocniczne
 //! @{
 //! Klasy pomocniczne, do których nie będzie bezpośrednio dostępu
@@ -19,6 +24,7 @@ class FirstNodeValue {
         return $tag->item(0)->nodeValue;
       }
     }
+    return null; // Warto zwrócić null jawnie
   }
 }
 
@@ -39,7 +45,10 @@ class ElibriOnixMessage {
   //! @return instancję ElibriOnixMessage 
   public static function parse($source) {
     $doc = new DOMDocument();
+    // Tłumienie błędów XML przy ładowaniu
+    libxml_use_internal_errors(true);
     $doc->loadXML($source);
+    libxml_clear_errors();
     
     $message = new ElibriOnixMessage();
     $message->elibri_dialect = FirstNodeValue::get($doc, "Dialect");
@@ -60,6 +69,7 @@ class ElibriOnixMessage {
 
 
 //! Informacja o wydawnictwie
+#[\AllowDynamicProperties]
 class ElibriPublisherInfo {
   
   //! wewnętrzne Id wydawnictwo w eLibri
@@ -128,6 +138,7 @@ class ElibriPublisherInfo {
 
 
 //! Klasa abstrahuje informację o jednym produkcie, zwracane przez ElibriAPI::getPublisherProducts 
+#[\AllowDynamicProperties]
 class ElibriPublisherProduct {
 
   //! Tytuł produktu 
@@ -209,6 +220,7 @@ class ElibriAnnotatedObject {
 }
 
 //! Reprezentacja produktu
+#[\AllowDynamicProperties]
 class ElibriProduct {
   
   //! fizyczna forma produktu (kod ONIX) - patrz ElibriDictProductFormCode
@@ -519,16 +531,6 @@ class ElibriProduct {
     //Supply detail
     $xsupplys = $xml_fragment->getElementsByTagName("SupplyDetail");
 
-    //get price and VAT
-    //if ($xsupplys->length > 0) {
-    //  $xsupply = $xsupplys->item(0);
-    //  if ($xsupply->getElementsByTagName("Price")->length > 0) {
-    //    $price = $xsupply->getElementsByTagName("Price")->item(0);
-    //    if ($price->getElementsByTagName("PriceType")->item(0)
-    //
-    //  }
-    //}
-
     foreach ($xsupplys as $xsupply) {
       $supply = new ElibriSupplyDetail($xsupply);
       $this->supply_details[] = $supply;
@@ -786,15 +788,15 @@ class ElibriProduct {
     //issn
     $collection_identifiers = $descriptive_detail->getElementsByTagName("CollectionIdentifier");
     foreach ($collection_identifiers as $collection_identifier) {
-    	if (FirstNodeValue::get($collection_identifier, "CollectionIDType") == "02") {
-	    	//CollectionIDType == 02 oznacza, że w polu IDValue znajduje się ISSN
-    		$issn = FirstNodeValue::get($collection_identifier, "IDValue");
-    		if ($issn) {
-    			$this->issn_with_hyphens = $issn;
-    			$this->issn = preg_replace('/[^0-9xX]/', '', $issn);
-    			break;
-    		}
-    	}
+      if (FirstNodeValue::get($collection_identifier, "CollectionIDType") == "02") {
+        //CollectionIDType == 02 oznacza, że w polu IDValue znajduje się ISSN
+        $issn = FirstNodeValue::get($collection_identifier, "IDValue");
+        if ($issn) {
+          $this->issn_with_hyphens = $issn;
+          $this->issn = preg_replace('/[^0-9xX]/', '', $issn);
+          break;
+        }
+      }
     }
     
   }
@@ -1058,6 +1060,7 @@ class ElibriCollection {
 }
   
 //! Klasa reprezentująca osoby tworzące książkę (autor, rysownik itd)
+#[\AllowDynamicProperties]
 class ElibriContributor extends ElibriAnnotatedObject {
     
   //! numer kolejny
@@ -1391,6 +1394,7 @@ class ElibriSalesRestriction {
 
 
 //! Klasa reprezentująca informację o fragmencie utworu (produkty cyfrowe)
+#[\AllowDynamicProperties]
 class ElibriExcerptInfo {
   //! wielkość pliku w bajtach
   public $file_size; 
@@ -1439,6 +1443,7 @@ class ElibriExcerptInfo {
 }
 
 //! Klasa reprezentująca informację o plikach master (produkty cyfrowe)
+#[\AllowDynamicProperties]
 class ElibriFileInfo {
   //! wielkość pliku w bajtach
   public $file_size;
@@ -1543,12 +1548,13 @@ class ElibriSupplierIdentifier {
 } 
   
 //! Klasa reprezentująca dostawcę
+#[\AllowDynamicProperties]
 class ElibriSupplier {
     
   public $role;
   public $identifiers = array();
   public $name;
-  public $telephone_numer;
+  public $telephone_number; // POPRAWIONE Z telephone_numer
   public $email_address;
   public $website;
     
@@ -1610,7 +1616,7 @@ class ElibriSupplyDetail {
     }
         
     $xstock = $xml_fragment->getElementsByTagName("Stock")->item(0);
-	  
+    
     if ($xstock) {
         if ($xstock->getElementsByTagName("OnHand")->length > 0) {
           $this->on_hand = FirstNodeValue::get($xstock, "OnHand", true);
